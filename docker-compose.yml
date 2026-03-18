@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  arctic-db:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arcticdb-server
+    ports:
+      - "8080:8080"
+    environment:
+      - ARCTICDB_URI=s3://arcticdb-data
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-arcticdb-storage}
+      - S3_PREFIX=${S3_PREFIX:-arctic-data/}
+      - FLASK_ENV=production
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - arctic-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  arctic-data:
+  arctic-logs:
+
+networks:
+  arctic-network:
+    driver: bridge
