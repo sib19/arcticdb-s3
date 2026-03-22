@@ -1,0 +1,16 @@
+# PowerShell - export system root CAs to PEM
+$certs = @()
+$store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", "LocalMachine")
+$store.Open("ReadOnly")
+
+foreach ($cert in $store.Certificates) {
+    $certs += "-----BEGIN CERTIFICATE-----"
+    $certs += [System.Convert]::ToBase64String($cert.RawData) -replace '.{64}', "$&`n"
+    $certs += "-----END CERTIFICATE-----"
+}
+
+$certs | Out-File -Encoding ASCII "C:\corporate-ca-bundle.pem"
+$store.Close()
+
+# Verify it worked
+Get-Content "C:\corporate-ca-bundle.pem" | Select-Object -First 10
